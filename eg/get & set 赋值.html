@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<script>
+  const Data = {
+    name: 'UUU',
+    phone: 13012345678
+  }
+  let dataDef = {}
+  dataDef.get = function () {
+    return Data
+  }
+
+  dataDef.set = function () {
+    console.warn('Avoid replacing instance root $data. ' + 'Use nested data properties instead.', this)
+  }
+
+  const Vue = {}
+
+  Object.defineProperty(Vue, '$data', dataDef)
+
+  // dataDef.set = function () {
+  //   console.warn(`Data is readonly.`, this)
+  // }
+</script>
+</body>
+</html>

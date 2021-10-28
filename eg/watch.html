@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vue.js example</title>
+</head>
+<body>
+<div id="app">
+  <button @click="changeUserInfo">change userInfo</button>
+</div>
+<script src="../dist/vue.js"></script>
+<script>
+  const app =  new Vue({
+    el: '#app',
+    data(){
+      return {
+        userInfo: 20000
+      }
+    },
+    beforeCreate(){
+      console.log('beforeCreate')
+    },
+    created(){
+      console.log('created')
+    },
+    methods: {
+      changeUserInfo() {
+        this.userInfo = 10000
+        console.log(this.userInfo)
+      }
+    }
+  })
+
+  console.log(app)
+
+  app.$watch('userInfo', function (newVal, oldVal) {
+    console.log('监听userInfo:', newVal, oldVal)
+  })
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vue.js example</title>
+</head>
+<body>
+<div id="app">
+    <h1>{{compName}}</h1>
+</div>
+<script src="../dist/vue.js"></script>
+<script>
+  const vm = new Vue({
+    el: '#app',
+    data(){
+      return {
+        compName : '生命周期函数：%c'
+      }
+    },
+    beforeCreate() {
+      console.log(`${this.compName} beforeCreate`, 'color:red;')
+    },
+    created() {
+      console.log(`${this.compName} created`, 'color:red;')
+    },
+    beforeMount() {
+      console.log(`${this.compName} beforeMount`, 'color:red;')
+    },
+    mounted() {
+      console.log(`${this.compName} mounted`, 'color:red;')
+    },
+    beforeUpdate() {
+      console.log(`${this.compName} beforeUpdate`, 'color:red;')
+    },
+    updated() {
+      console.log(`${this.compName} updated`, 'color:red;')
+    },
+    beforeDestroy() {
+      console.log(`${this.compName} beforeDestroy`, 'color:red;')
+    },
+    destroyed() {
+      console.log(`${this.compName} destroyed`, 'color:red;')
+    },
+  })
+
+  console.log('Vue实例：', vm)
+
+</script>
+</body>
+</html>

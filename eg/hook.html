@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<script>
+
+
+  // vue/src/shared/constansts.js
+  const LIFECYCLE_HOOKS = [
+    'beforeCreate',
+    'created',
+    'beforeMount',
+    'mounted',
+    'beforeUpdate',
+    'updated',
+    'beforeDestroy',
+    'destroyed',
+    'activated',
+    'deactivated',
+    'errorCaptured',
+    'serverPrefetch'
+  ]
+
+  // vue/src/core/util/options.js
+  const strats = {} //const strats = config.optionMergeStrategies
+  LIFECYCLE_HOOKS.forEach(hook => {
+    strats[hook] = mergeHook
+  })
+
+
+  /**
+   * vue/src/core/util/options.js
+   * 返回 如下形式
+   *  beforeCreate: [fn]
+   *  mounted: [fn]
+   */
+  function mergeHook (parentVal, childVal) {
+    const res = childVal
+      ? parentVal
+        ? parentVal.concat(childVal)
+        : Array.isArray(childVal)
+          ? childVal
+          : [childVal]
+      : parentVal
+
+    console.log('mergeHook', res)
+    return res ? dedupeHooks(res) : res
+  }
+
+  //  vue/src/core/util/options.js
+  function dedupeHooks (hooks) {
+    const res = []
+    for (let i = 0; i < hooks.length; i++) {
+      if (res.indexOf(hooks[i]) === -1) {
+        res.push(hooks[i])
+      }
+    }
+    console.log('dedupeHooks', res)
+    return res
+  }
+
+  /**
+   * 第1个参数 当前实例对象的构造器的选项
+   * 第2个参数 options就是创建Vue实例时传入的选项
+   * 第3个参数 当前实例自身
+   * 源码位置 vue/src/core/util/options.js
+   */
+  function mergeOptions (parent, child, vm) {
+    // if (process.env.NODE_ENV !== 'production') {
+    //   checkComponents(child)
+    // }
+    //
+    // if (typeof child === 'function') {
+    //   child = child.options
+    // }
+    //
+    // normalizeProps(child, vm)
+    // normalizeInject(child, vm)
+    // normalizeDirectives(child)
+    //
+    // // Apply extends and mixins on the child options,
+    // // but only if it is a raw options object that isn't
+    // // the result of another mergeOptions call.
+    // // Only merged options has the _base property.
+    // if (!child._base) {
+    //   if (child.extends) {
+    //     parent = mergeOptions(parent, child.extends, vm)
+    //   }
+    //   if (child.mixins) {
+    //     for (let i = 0, l = child.mixins.length; i < l; i++) {
+    //       parent = mergeOptions(parent, child.mixins[i], vm)
+    //     }
+    //   }
+    // }
+
+    const options = {}
+    let key
+    for (key in parent) {
+      mergeField(key)
+    }
+    for (key in child) {
+      if (!hasOwn(parent, key)) {
+        mergeField(key)
+      }
+    }
+    function mergeField (key) {
+      // 这里用不到 st component  directive filter
+      const strat = strats[key]
+      options[key] = strat(parent[key], child[key], vm, key)
+    }
+
+    return options
+  }
+
+  const hasOwnProperty = Object.prototype.hasOwnProperty
+  function hasOwn (obj, key) {
+    return hasOwnProperty.call(obj, key)
+  }
+
+
+  function toArray (list, start) {
+    start = start || 0
+    let i = list.length - start
+    const ret = new Array(i)
+    while (i--) {
+      ret[i] = list[i + start]
+    }
+    return ret
+  }
+
+  function invokeWithErrorHandling (handler, context, args, vm, info) {
+    let res
+    try {
+
+      // 判断是否有参数，用 apply 或 call 改变作用域 来执行回调函数
+      res = args ? handler.apply(context, args) : handler.call(context)
+
+      // 异步
+      if (res && !res._isVue && isPromise(res) && !res._handled) {
+        res.catch(e => handleError(e, vm, info + ` (Promise/async)`))
+        // issue #9511
+        // avoid catch triggering multiple times when nested calls
+        res._handled = true
+      }
+    } catch (e) {
+      console.error('e', e)
+      // handleError(e, vm, info)
+    }
+    return res
+  }
+
+  // Vue构造器
+  function Vue(options){
+    this._events = {}
+    this._init(options)
+  }
+
+
+  /**
+   * vm:vue实例
+   * hook:对应的操作名(例如:beforeCreate、created等)
+   * vue/src/code/instance/lifecycle.js
+   */
+  function callHook (vm, hook) {
+    // #7573 disable dep collection when invoking lifecycle hooks
+    // pushTarget()
+    const handlers = vm.$options[hook] //获取生命周期函数 返回的是一个数组 beforeCreate: [ beforeCreate(){}]
+    const info = `${hook} hook`
+    if (handlers) {
+      //遍历生命周期函数
+      for (let i = 0, j = handlers.length; i < j; i++) {
+        invokeWithErrorHandling(handlers[i], vm, null, vm, info)
+      }
+    }
+
+    /**
+     * 如果设置了 Hook Event
+     * 比如 <comp [@hook](/user/hook):mounted="method" /> 则触发该事件
+     */
+    if (vm._hasHookEvent) {
+      vm.$emit('hook:' + hook)
+    }
+    // popTarget()
+  }
+
+
+  // vue/src/code/instance/index.js
+  function initMixin (Vue) {
+    // 初始化Vue的过程
+    Vue.prototype._init = function (options) {
+      // vue实例
+      const vm= this
+
+      vm._isVue = true
+      vm.$options = mergeOptions(
+        vm.constructor, //resolveConstructorOptions(vm.constructor)
+        options || {}, // new Vue(Data)
+        vm
+      )
+
+
+      callHook(vm, 'beforeCreate')
+      callHook(vm, 'created')
+
+    }
+  }
+
+  // vue/src/code/instance/index.js
+  function eventsMixin (Vue) {
+    const hookRE = /^hook:/
+    Vue.prototype.$on = function (event, fn) {
+      const vm = this
+      if (Array.isArray(event)) {
+        for (let i = 0, l = event.length; i < l; i++) {
+          vm.$on(event[i], fn)
+        }
+      } else {
+        //  如果是通过$on新添加的事件,直接把事件和回调方法传入到_events对象中
+        (vm._events[event] || (vm._events[event] = [])).push(fn)
+
+        if (hookRE.test(event)) {
+          vm._hasHookEvent = true
+        }
+      }
+      return vm
+    }
+
+    Vue.prototype.$once = function (event, fn) {
+      const vm = this
+      function on () {
+        vm.$off(event, on)
+        fn.apply(vm, arguments)
+      }
+      on.fn = fn
+      vm.$on(event, on)
+      return vm
+    }
+
+    Vue.prototype.$off = function (event, fn) {
+      const vm = this
+      // all
+      if (!arguments.length) {
+        vm._events = Object.create(null)
+        return vm
+      }
+      // array of events
+      if (Array.isArray(event)) {
+        for (let i = 0, l = event.length; i < l; i++) {
+          vm.$off(event[i], fn)
+        }
+        return vm
+      }
+      // specific event
+      const cbs = vm._events[event]
+      if (!cbs) {
+        return vm
+      }
+      if (!fn) {
+        vm._events[event] = null
+        return vm
+      }
+      // specific handler
+      let cb
+      let i = cbs.length
+      while (i--) {
+        cb = cbs[i]
+        if (cb === fn || cb.fn === fn) {
+          cbs.splice(i, 1)
+          break
+        }
+      }
+      return vm
+    }
+
+    Vue.prototype.$emit = function (event) {
+      const vm = this
+      let cbs = vm._events[event]
+      if (cbs) {
+        cbs = cbs.length > 1 ? toArray(cbs) : cbs
+        const args = toArray(arguments, 1)
+        const info = `event handler for "${event}"`
+        for (let i = 0, l = cbs.length; i < l; i++) {
+          invokeWithErrorHandling(cbs[i], vm, args, vm, info)
+        }
+      }
+      return vm
+    }
+  }
+
+
+  // 开始Vue初始化
+  initMixin(Vue)
+  eventsMixin(Vue)
+
+  const vm  = new Vue({
+    beforeCreate() {
+      console.log('生命周期：beforeCreate')
+    },
+    created(){
+      console.log('生命周期：created')
+    },
+    mounted(){
+      console.log('生命周期：mounted')
+    }
+  })
+
+
+  //  <comp [@hook](/user/hook):mounted="method" 监听组件的生命周期
+  vm.$once('hook:mounted', () => {
+    console.log('hook:mounted')
+  })
+
+
+  // callHook(vm, 'beforeCreate')
+  callHook(vm, 'mounted')
+
+</script>
+</body>
+</html>

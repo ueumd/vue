@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<script>
+  const ncname = '[a-zA-Z_][\\w\\-\\.]*'
+  const startTagOpen = new RegExp(`^<${ncname}`)
+  const startTagClose = /^\s*(\/?)>/
+  const endTag = new RegExp(`^<\\/${ncname}[^>]*>`)
+
+  function parseHTML(html, options) {
+    let index = 0
+    let last,lastTag
+    const stack = []
+    while(html) {
+      last = html
+      let textEnd = html.indexOf('<')
+
+      // "<" 字符在当前 html 字符串开始位置
+      if (textEnd === 0) {
+        // 1、匹配到注释: <!-- -->
+        if (/^<!\--/.test(html)) {
+          const commentEnd = html.indexOf('-->')
+          if (commentEnd >= 0) {
+            // 调用 options.comment 回调，传入注释内容
+            // options.comment(html.substring(4, commentEnd))
+            // 裁切掉注释部分
+            advance(commentEnd + 3)
+            continue
+          }
+        }
+
+        // 2、匹配到条件注释: <![if !IE]>  <![endif]>
+        if (/^<!\[/.test(html)) {
+          // ... 逻辑与匹配到注释类似
+        }
+
+        // 3、匹配到 Doctype: <!DOCTYPE html>
+        const doctypeMatch = html.match(/^<!DOCTYPE [^>]+>/i)
+        if (doctypeMatch) {
+          // ... 逻辑与匹配到注释类似
+        }
+
+        // 4、匹配到结束标签: </div>
+        const endTagMatch = html.match(endTag)
+        if (endTagMatch) {}
+
+        // 5、匹配到开始标签: <div>
+        const startTagMatch = parseStartTag()
+        if (startTagMatch) {}
+      }
+      // "<" 字符在当前 html 字符串中间位置
+      let text, rest, next
+      if (textEnd > 0) {
+        // 提取中间字符
+        rest = html.slice(textEnd)
+        // 这一部分当成文本处理
+        text = html.substring(0, textEnd)
+        advance(textEnd)
+      }
+      // "<" 字符在当前 html 字符串中不存在
+      if (textEnd < 0) {
+        text = html
+        html = ''
+      }
+
+      // 如果存在 text 文本
+      // 调用 options.chars 回调，传入 text 文本
+      if (options.chars && text) {
+        // 字符相关回调
+        options.chars(text)
+      }
+    }
+    // 向前推进，裁切 html
+    function advance(n) {
+      index += n
+      html = html.substring(n)
+    }
+
+    console.log(stack)
+  }
+
+  var template = `<div id="app">
+  <h1>{{ msg }}</h1>
+  <h2>Hello</h2>
+</div>`
+  parseHTML(template)
+</script>
+</body>
+</html>

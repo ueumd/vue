@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vue.js example</title>
+</head>
+<body>
+<div id="app">
+  <h1>{{ msg }}</h1>
+  <child
+    @hook:created="hookFromParent"
+    @hover="hoverFromParent"
+    :msg-from-father="msg"
+    :hit-from-father="hit"
+  >
+  </child>
+</div>
+<script type="text/x-template" id="child">
+  <div><p @click="showMsgFromSon">{{msgFromFather}} and {{hitFromFather}}</p></div>
+</script>
+<script src="../dist/vue.js"></script>
+<script>
+  const childComponent = Vue.component('child', {
+    template:'#child',
+    data () {
+      return {
+        childMsg: 'Hello, I am Child'
+      }
+    },
+    props: ['msgFromFather', 'hitFromFather'],
+    methods: {
+      showMsgFromSon () {
+        console.log('Hello Vue from son')
+      }
+    },
+    mounted () {
+      console.log('child mounted')
+    }
+  })
+
+
+ const App =  new Vue({
+   el: '#app',
+   data () {
+     return {
+       msg: 'Hello Chris, I am your father',
+       hit: 'I will hit you if you do not study',
+     }
+   },
+   components: {
+     childComponent
+   },
+   beforeCreate(){
+     console.log('beforeCreate')
+   },
+   created(){
+     console.log('created')
+   },
+   methods: {
+     hoverFromParent () {
+       console.log('attach event')
+     },
+     hookFromParent () {
+       console.log('attach hook')
+     }
+   }
+  })
+
+  console.dir(App)
+  console.dir(childComponent)
+
+</script>
+</body>
+</html>
